@@ -1,0 +1,45 @@
+# 可复用工作流：各仓库通过 `uses: luckliu2007/content-radar/.github/workflows/radar.yml@main` 调用。
+# 调用方需授予 permissions: contents: write, issues: write
+name: Content Radar (reusable)
+
+on:
+  workflow_call:
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: luckliu2007/content-radar
+          path: .radar-tool
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Scan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .radar-tool/radar.py --config .github/radar.json --out "$RUNNER_TEMP/radar" --apply-renames
+
+      - name: Commit same-owner rename fixes
+        run: |
+          if [ -n "$(git status --porcelain -- '*.md')" ]; then
+            git config user.name "content-radar[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- '*.md'
+            git commit -m "chore(radar): 更新已改名仓库的链接（同一 owner）"
+            git push
+          fi
+
+      - name: Publish radar issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create content-radar --color 0E8A16 --description "每日内容雷达" --force >/dev/null
+          # 关闭之前未处理的雷达 Issue，避免堆积（新报告已包含最新状态）
+          for n in $(gh issue list --label content-radar --state open --json number -q '.[].number'); do
+            gh issue close "$n" --comment "已被新的雷达报告取代。" >/dev/null
+          done
+          gh issue create --title "内容雷达 $(date -u +%F)" --label content-radar --body-file "$RUNNER_TEMP/radar.md"
