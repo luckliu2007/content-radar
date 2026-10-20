@@ -75,7 +75,8 @@ def days_since(iso):
     return (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))).days
 
 
-def health_check(listed, stale_days):
+def health_check(listed, stale_days, verified_transfers=None):
+    verified = {k.lower(): v.lower() for k, v in (verified_transfers or {}).items()}
     issues = []
     for key, (orig, files) in sorted(listed.items()):
         info = api_get(f"/repos/{orig}")
@@ -84,7 +85,8 @@ def health_check(listed, stale_days):
             issues.append({**base, "kind": "missing"})
             continue
         new_name = info["full_name"]
-        if new_name.lower() != key:
+        # 人工核实过的跨 owner 转移：目标一致就不再报警；目标再变则重新报警
+        if new_name.lower() != key and verified.get(key) != new_name.lower():
             same_owner = new_name.split("/")[0].lower() == orig.split("/")[0].lower()
             issues.append({**base, "kind": "renamed" if same_owner else "transferred", "new": new_name})
         if info.get("archived"):
@@ -199,7 +201,7 @@ def main():
                   if l.strip() and not l.startswith("#")}
 
     listed = listed_repos(root, cfg.get("self_owner", ""))
-    issues = health_check(listed, cfg.get("stale_days", 540))
+    issues = health_check(listed, cfg.get("stale_days", 540), cfg.get("verified_transfers"))
     cands = discover(cfg, listed, ignore)
     applied = apply_renames(root, issues) if args.apply_renames else []
 

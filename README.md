@@ -40,9 +40,12 @@ jobs:
   "max_age_days": 730,
   "stale_days": 540,
   "suspicious_stars_per_day": 500,
-  "top_n": 8
+  "top_n": 8,
+  "verified_transfers": {"OldOwner/repo": "NewOwner/repo"}
 }
 ```
+
+`verified_transfers`：人工核实过的跨 owner 转移（例如官方迁移），目标一致时不再报警；若仓库再次转移到其他地方，会重新报警。
 
 ## 本地运行
 
