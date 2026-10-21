@@ -16,7 +16,7 @@
 name: Content Radar
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '41 21 * * *'   # 避开整点，GitHub 整点任务常延迟数小时
   workflow_dispatch:
 permissions:
   contents: write
