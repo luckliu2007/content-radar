@@ -45,6 +45,8 @@ jobs:
 }
 ```
 
+`require_keywords` / `exclude_keywords`：按项目简介和 GitHub 标签做相关性过滤（不区分大小写）。设置了 `require_keywords` 时，候选至少要命中其中一个；命中任一 `exclude_keywords` 的会被排除。被过滤的数量会写进报告。
+
 `verified_transfers`：人工核实过的跨 owner 转移（例如官方迁移），目标一致时不再报警；若仓库再次转移到其他地方，会重新报警。
 
 ## 本地运行

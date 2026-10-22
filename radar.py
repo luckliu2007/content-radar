@@ -96,9 +96,20 @@ def health_check(listed, stale_days, verified_transfers=None):
     return issues
 
 
+def relevant(text, cfg):
+    """按主题关键词判断候选是否相关：require_keywords 至少命中一个，exclude_keywords 一个都不能命中。"""
+    text = text.lower()
+    req = [k.lower() for k in cfg.get("require_keywords", [])]
+    exc = [k.lower() for k in cfg.get("exclude_keywords", [])]
+    if req and not any(k in text for k in req):
+        return False
+    return not any(k in text for k in exc)
+
+
 def discover(cfg, listed, ignore):
+    """返回 (候选列表, 因主题不相关被过滤的数量)。"""
     since = (dt.date.today() - dt.timedelta(days=cfg.get("pushed_within_days", 30))).isoformat()
-    seen, cands = set(), []
+    seen, cands, filtered = set(), [], 0
     for q in cfg["queries"]:
         query = f"{q} stars:>={cfg.get('min_stars', 500)} pushed:>={since} archived:false fork:false"
         res = api_get("/search/repositories", {"q": query, "sort": "stars", "order": "desc", "per_page": 30}) or {}
@@ -109,6 +120,9 @@ def discover(cfg, listed, ignore):
             seen.add(key)
             age = max(days_since(it["created_at"]), 30)
             if age > cfg.get("max_age_days", 730):
+                continue
+            if not relevant(it["description"] + " " + " ".join(it.get("topics") or []), cfg):
+                filtered += 1
                 continue
             lic = (it.get("license") or {}).get("spdx_id")
             cands.append({
@@ -126,7 +140,7 @@ def discover(cfg, listed, ignore):
             })
         time.sleep(2)  # 搜索 API 限额 30 次/分钟
     cands.sort(key=lambda c: c["stars_per_day"], reverse=True)
-    return cands[: cfg.get("top_n", 8)]
+    return cands[: cfg.get("top_n", 8)], filtered
 
 
 def apply_renames(root, issues):
@@ -158,7 +172,7 @@ KIND_LABEL = {
 }
 
 
-def render(cfg, issues, cands, applied):
+def render(cfg, issues, cands, applied, filtered=0):
     today = dt.date.today().isoformat()
     lines = [f"# 内容雷达 {today}", "", f"主题：{cfg.get('theme', '')}", ""]
     lines += ["## 一、已收录项目健康检查", ""]
@@ -172,6 +186,8 @@ def render(cfg, issues, cands, applied):
     if applied:
         lines += ["", f"已自动修复改名链接：{', '.join(applied)}"]
     lines += ["", "## 二、新发现候选（按每日星标增速排序）", ""]
+    if filtered:
+        lines += [f"已按主题关键词过滤掉 {filtered} 个不相关项目。", ""]
     if not cands:
         lines.append("今日无新候选。")
     else:
@@ -202,14 +218,14 @@ def main():
 
     listed = listed_repos(root, cfg.get("self_owner", ""))
     issues = health_check(listed, cfg.get("stale_days", 540), cfg.get("verified_transfers"))
-    cands = discover(cfg, listed, ignore)
+    cands, filtered = discover(cfg, listed, ignore)
     applied = apply_renames(root, issues) if args.apply_renames else []
 
-    Path(args.out + ".md").write_text(render(cfg, issues, cands, applied), encoding="utf-8")
+    Path(args.out + ".md").write_text(render(cfg, issues, cands, applied, filtered), encoding="utf-8")
     Path(args.out + ".json").write_text(json.dumps(
         {"date": dt.date.today().isoformat(), "listed": len(listed), "issues": issues,
-         "candidates": cands, "applied_renames": applied}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"listed={len(listed)} issues={len(issues)} candidates={len(cands)} renamed_fixed={len(applied)}")
+         "candidates": cands, "filtered_irrelevant": filtered, "applied_renames": applied}, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"listed={len(listed)} issues={len(issues)} candidates={len(cands)} filtered={filtered} renamed_fixed={len(applied)}")
 
 
 if __name__ == "__main__":
