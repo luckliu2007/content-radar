@@ -8,6 +8,10 @@ on:
 jobs:
   radar:
     runs-on: ubuntu-latest
+    # 显式声明所需权限（不能超过调用方授予的范围）
+    permissions:
+      contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7

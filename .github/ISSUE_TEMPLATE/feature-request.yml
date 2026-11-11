@@ -1,0 +1,18 @@
+name: 💡 功能建议
+description: 新的健康检查规则、筛选条件或报告格式
+title: "[建议] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 想解决什么问题
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议的做法
+      description: 如果涉及 radar.json 的新配置项，请写出示例。
+    validations:
+      required: true
