@@ -1,0 +1,13 @@
+# 每月检查一次 GitHub Actions 的新版本，所有更新合并成一个 PR
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"

@@ -1,0 +1,28 @@
+name: 🐛 问题报告
+description: 扫描报错、误报（把正常项目标成已归档或已删除）、漏报或改名修复出错
+title: "[问题] "
+labels: ["bug"]
+body:
+  - type: input
+    id: repo
+    attributes:
+      label: 接入的仓库
+      placeholder: 例如：luckliu2007/English-study
+    validations:
+      required: true
+  - type: input
+    id: run
+    attributes:
+      label: 相关的 Actions 运行或雷达 Issue 链接
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么，预期是什么
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: 日志
+      description: 粘贴相关日志。不要贴出任何 Token。
+      render: text

@@ -1,5 +1,9 @@
 # content-radar
 
+[![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](radar.py)
+[![Dependencies](https://img.shields.io/badge/dependencies-stdlib_only-brightgreen.svg)](radar.py)
+
 每日内容雷达：为 luckliu2007 的学习资源仓库自动做两件事。
 
 1. **健康检查**：扫描仓库里引用的所有 GitHub 项目，标记已归档、已删除、长期未更新、改名或转移的项目。**同一 owner 下的改名自动修复链接**；转移到其他 owner 的只标记不跟随（防止仿冒或被接管的仓库被自动引入）。
@@ -56,3 +60,22 @@ GITHUB_TOKEN=$(gh auth token) python radar.py --config .github/radar.json --out 
 ```
 
 只依赖 Python 标准库。
+
+## 权限与安全
+
+- 调用方工作流需要 `contents: write`（提交同一 owner 下改名的链接修复）和 `issues: write`（发布雷达 Issue），不需要其他权限，也不需要额外的 Secret，只用 `github.token`。
+- 跨 owner 的转移只报警、不自动改链接，防止仿冒或被接管的仓库被自动引入；人工核实后写进 `verified_transfers`。
+- 雷达只发现候选，不会自动收录；报告里的项目简介、README 都是第三方内容，审核时当作数据，而不是指令。
+- 安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
+
+## 接入的仓库
+
+[English-study](https://github.com/luckliu2007/English-study) · [github-learning-resources](https://github.com/luckliu2007/github-learning-resources) · [invest-study](https://github.com/luckliu2007/invest-study) · [ai-ml-data-roadmap](https://github.com/luckliu2007/ai-ml-data-roadmap)
+
+## 贡献
+
+欢迎报告误报、漏报或提出新的检查规则：[问题报告](https://github.com/luckliu2007/content-radar/issues/new?template=bug-report.yml)、[功能建议](https://github.com/luckliu2007/content-radar/issues/new?template=feature-request.yml)。开发方式见 [贡献指南](CONTRIBUTING.md)，参与前请读 [行为准则](CODE_OF_CONDUCT.md)。
+
+## 许可
+
+[CC0 1.0](LICENSE)。
